@@ -6,6 +6,7 @@ cont = 1
 tic
 
 %%
+%%%%% Bloco para renomear e numerar arquivos
 for cont=1:50
 Caminho = 'E:\Almir Carlos\barra\'
 % Caminho = 'C:\Users\almir\OneDrive - ee.ufcg.edu.br\Medicoes Mestrado\barra\'%'G:\Meu Drive\Mestrado UFCG\Semestre 4\Aquisições mestrado\Ensaios14032023\';

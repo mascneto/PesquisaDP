@@ -6,10 +6,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 caminho = 'C:\\Users\yuutr\\Desktop\\Pasta Pessoal - Boaventura Filho\\PIBIC_Almir\\Dados\\Barra'
+# caminho = "C:\Users\jmlnn\Downloads\barra_6kv_1_1.mat"
 
 # Exibir as variáveis contidas no arquivo .mat
 # print(dados.keys())
-
+ 
 #Função para renumerar os arquivos
 #Descrição das variáveis:
 #caminho - Path para a pastas na qual voce quer modificar e enumerar seus dados
@@ -27,40 +28,6 @@ def renumerar_arquivo(caminho,aq):
         os.rename(caminho_arquivo_antigo, caminho_arquivo_novo)
         
     print(os.listdir(caminho))
-
-
-# Acessar uma variável específica dentro do arquivo .mat
-        
-
-#Ch2 = dados['Ch2']
-
-# Criando o gráfico
-#plt.plot(dados.get('Ch1')*1000)
-#plt.plot(dados.get('Ch2')*100)
-#plt.xlabel("Pontos adquiridos (x10e6)")
-#plt.ylabel("Amplitude (mV)")
-#plt.plot(dados.get('Ch3'))
-#plt.grid(True)
-#plt.show()
-
-# Encontrar os máximos e mínimos em Ch2
-#maior = np.max(Ch2)
-#ind_maior = np.argmax(Ch2)
-
-#menor = np.min(Ch2)
-#ind_menor = np.argmin(Ch2)
-
-# print(ind_maior, ind_menor)
-
-# Calcular as variáveis c_o, n_g, zero, início e tamanho do vetor
-#c_o = ind_menor - ind_maior
-#n_g = c_o / 2 # corte origem ?
-#zero = ind_maior - n_g
-#inicio = float(zero + 45000)  # Ajuste dependendo da unidade de amostra
-#tamanho_vetor = float(ind_menor + n_g + 70000)
-
-#Ch2 = np.array(dados.get('Ch2')) #  Tratamento dos dados de Ch2 para que vire um array numpy
-#Ch2_1d = np.ravel(Ch2) # tratamento dos dados de Ch2 para que seja um array numpy unidimensional
 
 
 from scipy.signal import lfilter

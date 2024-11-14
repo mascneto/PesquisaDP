@@ -56,7 +56,7 @@ load(s)
 limiar = 30;
 
 %    figure
-%    plot(Ch1*1000)
+%    plot(Ch1*1000) 
 % %    title('Antena pura')
 %    hold on
 %    plot(Ch2*100)
@@ -115,7 +115,7 @@ for nn = 1:1:10
 end
 %
 % plot(x,y,'Color',[1 0.5 0])
-aten = 0.1;
+aten = 0.1; % atenuação
 tam_plot = length(ampldetec);
 % condi_sinal antena_antena charge_ldic
    figure

@@ -148,4 +148,35 @@ for cont in range(1,len(lista_arquivos)):
     charge_ldic = [charge_ldic, charge]
 
 
+limiar = 30 # atenuação
+media_antena = np.mean(condi_sinal)
+#moda_antena = sp.stts.mode(condi_sinal)
+
+quadrado = np.abs(condi_sinal)
+
+maximo_teste = max(quadrado)
+pulso29 = np.zeros(np.size(condi_sinal))
+pulsoreal29 = np.zeros(np.size(condi_sinal))
+plt.figure(1)
+plt.plot(condi_sinal)
+plt.plot(quadrado)
+plt.show()
+
+for j in range(0,len(quadrado)):
+    if quadrado[j] > (limiar/100)*maximo_teste:
+            pulso29[j] = quadrado[j]
+    else:
+        pass
+
+for i in range(0,len(condi_sinal)):
+     if pulso29[i] == 0:
+          pass
+     else:
+          pulsoreal29[i] = condi_sinal[i]
+
+plt.figure(2)
+plt.plot(pulsoreal29)
+plt.show()
+
+
 

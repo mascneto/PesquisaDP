@@ -7,7 +7,7 @@ tic
 
 %%
 %%%%% Bloco para renomear e numerar arquivos
-for cont=1:50
+for cont=1:50 % numero de pastas barra_1 a barra_50
 Caminho = 'E:\Almir Carlos\barra\'
 % Caminho = 'C:\Users\almir\OneDrive - ee.ufcg.edu.br\Medicoes Mestrado\barra\'%'G:\Meu Drive\Mestrado UFCG\Semestre 4\Aquisições mestrado\Ensaios14032023\';
 Medicao = 'barra_6kv';
@@ -204,7 +204,7 @@ tam_plot = length(ampldetec);
     moda = mode(antena);
     
 %%
-%    quadrado = abs(derivada);
+%    quadrado = abs(derivada); # de onde vem essa derivada?
    quadrado = abs(antena);
 %    quadrado = derivada.^2;
    maximo_teste = max(quadrado);

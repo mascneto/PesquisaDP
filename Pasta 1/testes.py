@@ -2,9 +2,9 @@ import os
 import scipy.io
 from scipy.signal import lfilter
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+
 import zipfile
 
 # caminho = 'C:\\Users\yuutr\\Desktop\\Pasta Pessoal - Boaventura Filho\\PIBIC_Almir\\Dados\\Barra'
@@ -13,7 +13,12 @@ import zipfile
 # Exemplo de uso (nome do arquivo .zip sem o caminho completo)
 nome_arquivo_zip = "OneDrive-2024-11-12.zip"
 
-CAMINHO_ARQUIVO_ZIP = os.path.dirname(os.path.abspath(__file__)) 
+CAMINHO_ARQUIVO_ZIP = os.path.dirname(os.path.abspath(__file__))
+
+
+# Número de pastas e arquivos em cada pasta
+num_pastas = 50
+num_arquivos_por_pasta = 50
 
 # print(f"caminho_arquivo_zip: {CAMINHO_ARQUIVO_ZIP}")
 # Obtendo o caminho do arquivo .zip da variável de ambiente
@@ -89,13 +94,17 @@ def corte_seno_mm_tempo(tamos, Ch_sen):
         vetor_t = vetor_t - vetor_t[indices_passagem_zero_janela[0]]
         vetor_t = np.ravel(vetor_t)
 
+        # Calcula o índice de fim e início conforme a lógica
+        fim = indices_passagem_zero_janela[2] + 2000
+        in_idx = indices_passagem_zero_janela[1] - (indices_passagem_zero_janela[2] - indices_passagem_zero_janela[1]) - 2000
+
         return [vetor_t[indices_passagem_zero_janela[0]:indices_passagem_zero_janela[2]], \
                 y[indices_passagem_zero_janela[0]:indices_passagem_zero_janela[2]], \
                 indices_passagem_zero_janela[0], \
-                indices_passagem_zero_janela[2]]
+                indices_passagem_zero_janela[2], in_idx, fim]
 
 
-plt.plot(corte_seno_mm_tempo(tamos,Ch_sen)[0],corte_seno_mm_tempo(tamos,Ch_sen)[1])
+#plt.plot(corte_seno_mm_tempo(tamos,Ch_sen)[0],corte_seno_mm_tempo(tamos,Ch_sen)[1])
 #plt.show()
 
 #Acumular os pulsos nas devidas variáveis:
@@ -129,7 +138,7 @@ with zipfile.ZipFile(caminho_zip, 'r') as zip_ref:
 
         #Canal 3
         ampldetec = ch3[corte_seno_mm_tempo(tamos,ch2)[2]:corte_seno_mm_tempo(tamos,ch2)[3]] # começo e fim dos pulsos do seno cortado
-        condi_sinal = [condi_sinal, ampldetec] # condi_sinal é a lista vazia
+        condi_sinal = np.append(condi_sinal, ampldetec)
 
         #Canal 1
         antena_pura = ch1[corte_seno_mm_tempo(tamos,ch2)[2]:corte_seno_mm_tempo(tamos,ch2)[3]] # pega um arquivo .mat por vez
@@ -137,6 +146,51 @@ with zipfile.ZipFile(caminho_zip, 'r') as zip_ref:
 
         #Canal 4
         charge = ch4[corte_seno_mm_tempo(tamos,ch2)[2]:corte_seno_mm_tempo(tamos,ch2)[3]]
-        charge_ldic = [charge_ldic, charge]
+        charge_ldic = np.append(charge_ldic, charge)
 
 aten = 0.1 # atenuação
+
+"""
+%% Somente para determinaÃ§Ã£o de ruÃ­do
+
+% maximo_antena = max(charge_ldic);
+% minimo_antena = min(charge_ldic);
+% maximo_maximo_antena = max(maximo_antena);
+% minimo_minimo_antena = min(minimo_antena);
+% media_ruido = mean(charge_ldic,1);
+"""
+"""
+        senoide_16 = Ch2(inicio:tamanho_vetor,1);
+        tensao_barra = [tensao_barra, senoide_16];"""
+
+# é o canal 2 tratado
+senoide_16 = ch2[corte_seno_mm_tempo(tamos,Ch_sen)[-1]:corte_seno_mm_tempo(tamos,Ch_sen)[-2]] 
+
+"""
+senoide = tensao_barra # Se necessário pode fazer um laço for mais simples para fazer o acumulo da senoide
+"""
+
+antena = condi_sinal # no cod. original, Almir renomeia esta variável
+
+"""
+    media = mean(antena);
+    moda = mode(antena);
+    
+%%
+   quadrado = abs(antena);
+   maximo_teste = max(quadrado);
+   maxi_maxi = max(maximo_teste);
+   pulso29 = ones(size(antena));
+%    figure
+"""
+
+quadrado = abs(antena)
+pulso29 = np.zeros_like(quadrado)
+
+# print(f"Dimensão do vetor quadrado: {quadrado.shape}")
+
+# Calcular o limiar em termos absolutos
+limiar = 30
+threshold = (limiar / 100) * max(max(quadrado))
+
+q

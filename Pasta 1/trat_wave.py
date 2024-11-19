@@ -3,7 +3,7 @@ from pathlib import Path
 import scipy.io
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import lfilter
+from scipy.signal import lfilter, find_peaks
 
 # Parâmetros
 n_pastas = 1
@@ -101,39 +101,71 @@ def corte_seno_mm_tempo(tamos, Ch_sen):
                 fim]
 
 
-for arquivo in arquivos:
-    # print(arquivo)
-    dados = scipy.io.loadmat(arquivo)
+for arquivo in arquivos: # aquisições de um arquivo    
+    # Load .mat file
+    mat_data = scipy.io.loadmat(arquivo)
+    
+    # Assuming Ch1, Ch2, Ch3, Ch4 are in the loaded mat file
+    # You might need to adjust these based on exact variable names in your .mat file
+    Ch1 = mat_data['Ch1']
+    Ch2 = mat_data['Ch2']
+    Ch3 = mat_data['Ch3']
+    Ch4 = mat_data['Ch4']
+    
+    # Extract data from inicio to end of vector
+    ampldetec = Ch3[corte_seno_mm_tempo(tamos,Ch2)[2]:corte_seno_mm_tempo(tamos,Ch2)[3]]
+    condi_sinal.append(ampldetec)
+    
+    antena_pura = Ch1[corte_seno_mm_tempo(tamos,Ch2)[2]:corte_seno_mm_tempo(tamos,Ch2)[3]]
+    antena_antena.append(antena_pura)
+    
+    senoide_16 = Ch2[corte_seno_mm_tempo(tamos,Ch2)[2]:corte_seno_mm_tempo(tamos,Ch2)[3]]
+    tensao_barra.append(senoide_16)
+    
+    charge = Ch4[corte_seno_mm_tempo(tamos,Ch2)[2]:corte_seno_mm_tempo(tamos,Ch2)[3]]
+    charge_ldic.append(charge)
 
-    #Extraindo os Dados dos Canais dos osciloscopios:
-    ch1 = np.array(dados['Ch1']).ravel()
-    ch2 = np.array(dados['Ch2']).ravel()
-    ch3 = np.array(dados['Ch3']).ravel()
-    ch4 = np.array(dados['Ch4']).ravel()
+# Convert lists to numpy arrays
+condi_sinal = np.sum(np.column_stack(condi_sinal), axis=1)
+antena_antena = np.sum(np.column_stack(antena_antena), axis=1)
+tensao_barra = np.sum(np.column_stack(tensao_barra), axis=1)
+charge_ldic = np.sum(np.column_stack(charge_ldic), axis=1)
 
-    #Canal 3
-    ampldetec = ch3[corte_seno_mm_tempo(tamos,ch2)[2]:corte_seno_mm_tempo(tamos,ch2)[3]] # começo e fim dos pulsos do seno cortado
-    condi_sinal = np.append(condi_sinal, ampldetec)
+# Assume the following variables are available
+tempo = np.arange(1, len(senoide_16)+1)
+senoide = tensao_barra
+antena = condi_sinal
 
-    #Canal 1
-    antena_pura = ch1[corte_seno_mm_tempo(tamos,ch2)[2]:corte_seno_mm_tempo(tamos,ch2)[3]] # pega um arquivo .mat por vez
-    antena_antena = np.append(antena_antena, antena_pura) # soma todos os valores das antenas .mat
+# Calculate statistics
+# media = np.mean(antena, axis=0)
+# moda = stats.mode(antena, axis=0)[0]
 
-    #Canal 4
-    charge = ch4[corte_seno_mm_tempo(tamos,ch2)[2]:corte_seno_mm_tempo(tamos,ch2)[3]]
-    charge_ldic = np.append(charge_ldic, charge)
+# Process the data
+quadrado = np.abs(antena)
+maximo_teste = np.max(quadrado, axis=0)
+maxi_maxi = np.max(maximo_teste)
+pulso29 = np.zeros_like(antena)
 
-antena = condi_sinal # no cod. original, Almir renomeia esta variável
-quadrado = abs(antena)
-pulso29 = np.zeros_like(quadrado)
+limiar = 30 # or 2.56e-6
 
-#plt.plot(quadrado)
-#plt.show()
+for i in range(len(tempo)):
+    if quadrado[i] > (limiar/100) * maxi_maxi:
+        pulso29[i] = quadrado[i]
+    else:
+        pass
 
-# print(f"ampldetec: {len(ampldetec)}") # para 1 pasta e 4 arquivos, retorna 2082275
-print(ampldetec.shape)
+pulsoreal29 = np.where(pulso29 != 0, antena, 0)
 
-atenuacao = 0.1
-print(condi_sinal)
+amplitudes = []
+fases = []
+pks, locs = find_peaks(np.abs(pulsoreal29), distance=3440)
+fases.append(locs)
+amplitudes.append(pks)
 
-
+# Plot the data
+plt.figure(1)
+plt.plot(tempo, senoide*0.1, label='senoide')
+plt.plot(tempo, antena, label='antena')
+plt.plot(tempo, pulsoreal29, label='pulsoreal29')
+plt.legend()
+plt.show()

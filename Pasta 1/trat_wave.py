@@ -245,7 +245,7 @@ for cont in range(novo.shape[0]):  # 'size(novo,1)' no MATLAB é equivalente a '
     auxiliar_conversao[cont, 0] = (novo[cont, 1] / tam360) * 360
 
 # Concatenando amplitudes com auxiliar_conversao
-novo_graus = np.hstack((amplitudes[:, np.newaxis], auxiliar_conversao))
+novo_graus = np.hstack([amplitudes, auxiliar_conversao])
 
 # Copiando para absoluto
 absoluto = novo_graus
@@ -253,3 +253,5 @@ absoluto = novo_graus
 # Verificando se o número de linhas é maior que 5000
 if absoluto.shape[0] > 5000:
     pass
+
+absoluto = np.abs(novo_graus)

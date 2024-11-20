@@ -156,16 +156,100 @@ for i in range(len(tempo)):
 
 pulsoreal29 = np.where(pulso29 != 0, antena, 0)
 
-amplitudes = []
-fases = []
-pks, locs = find_peaks(np.abs(pulsoreal29), distance=3440)
-fases.append(locs)
-amplitudes.append(pks)
+# Make sure tempo and pulsoreal29 are numpy arrays
+tempo = np.array(tempo)
+pulsoreal29 = np.array(pulsoreal29)
 
 # Plot the data
-plt.figure(1)
+plt.figure()
 plt.plot(tempo, senoide*0.1, label='senoide')
 plt.plot(tempo, antena, label='antena')
 plt.plot(tempo, pulsoreal29, label='pulsoreal29')
 plt.legend()
-plt.show()
+#plt.show()
+
+
+"""# Debug prints to understand our data
+print("Type of pulsoreal29:", type(pulsoreal29))
+print("Shape of pulsoreal29:", pulsoreal29.shape)
+print("Type of tempo:", type(tempo))
+print("Shape of tempo:", tempo.shape)"""
+
+# Find peaks
+pks, locs_dict = find_peaks(np.abs(pulsoreal29), distance=3440)
+
+"""
+# Debug the output
+print("Type of pks:", type(pks))
+print("First few values of pks:", pks[:5] if hasattr(pks, '__getitem__') else "can't slice")
+print("Type of locs_dict:", type(locs_dict))
+"""
+
+# Convert to array
+locs = np.array(pks, dtype=np.int64)  # use pks instead of locs_dict
+"""
+print("Converted locs shape:", locs.shape)
+print("First few indices:", locs[:5])
+"""
+# Get peak values
+peak_amplitudes = pulsoreal29[locs]
+peak_times = tempo[locs]
+
+# Plot
+plt.figure(figsize=(12, 6))
+plt.plot(tempo, pulsoreal29, 'b-', label='Signal', alpha=0.7)
+plt.plot(peak_times, peak_amplitudes, 'ro', label='Peaks', markersize=8)
+plt.title('Signal with Detected Peaks')
+plt.xlabel('Time')
+plt.ylabel('Amplitude')
+plt.grid(True, alpha=0.3)
+plt.legend()
+plt.tight_layout()
+# plt.show()
+
+# Store results
+fases = peak_times
+amplitudes = peak_amplitudes
+
+# Get peak values directly using the indices
+peak_amplitudes = pulsoreal29[locs]  
+peak_times = tempo[locs]
+
+"""
+# Debug after conversion
+print("Type of locs after conversion:", type(locs))
+print("Shape of locs after conversion:", locs.shape)
+print("First few values after conversion:", locs[:5])
+
+"""
+
+# Concatenação horizontal de amplitudes e fases (horzcat)
+novo = np.column_stack((amplitudes, fases))
+
+# Create the x-axis steps
+passo_plot = 360/len(antena)  
+eixo_x = np.arange(passo_plot, 360 + passo_plot, passo_plot)  # equivalente ao [passo_plot:passo_plot:360]
+
+# Primeira coluna da senoide (se a senoide for 2D)
+senoide_16 = senoide[:, 0] if len(senoide.shape) > 1 else senoide
+
+# Eixo de 360 graus
+eixo_360 = eixo_x
+
+# Inicializando o vetor auxiliar_conversao
+auxiliar_conversao = np.zeros((novo.shape[0], 1))
+tam360 = eixo_360.shape[0]
+
+# Loop para calcular o valor de auxiliar_conversao
+for cont in range(novo.shape[0]):  # 'size(novo,1)' no MATLAB é equivalente a 'novo.shape[0]' em Python
+    auxiliar_conversao[cont, 0] = (novo[cont, 1] / tam360) * 360
+
+# Concatenando amplitudes com auxiliar_conversao
+novo_graus = np.hstack((amplitudes[:, np.newaxis], auxiliar_conversao))
+
+# Copiando para absoluto
+absoluto = novo_graus
+
+# Verificando se o número de linhas é maior que 5000
+if absoluto.shape[0] > 5000:
+    pass

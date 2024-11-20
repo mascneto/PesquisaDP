@@ -199,13 +199,16 @@ peak_times = tempo[locs]
 plt.figure(figsize=(12, 6))
 plt.plot(tempo, pulsoreal29, 'b-', label='Signal', alpha=0.7)
 plt.plot(peak_times, peak_amplitudes, 'ro', label='Peaks', markersize=8)
+plt.plot(tempo, senoide*0.1, label='senoide')
+plt.plot(tempo, antena, label='antena')
+plt.plot(tempo, pulsoreal29, label='pulsoreal29')
 plt.title('Signal with Detected Peaks')
 plt.xlabel('Time')
 plt.ylabel('Amplitude')
 plt.grid(True, alpha=0.3)
 plt.legend()
 plt.tight_layout()
-# plt.show()
+plt.show()
 
 # Store results
 fases = peak_times
@@ -244,8 +247,9 @@ tam360 = eixo_360.shape[0]
 for cont in range(novo.shape[0]):  # 'size(novo,1)' no MATLAB é equivalente a 'novo.shape[0]' em Python
     auxiliar_conversao[cont, 0] = (novo[cont, 1] / tam360) * 360
 
-# Concatenando amplitudes com auxiliar_conversao
-novo_graus = np.hstack([amplitudes, auxiliar_conversao])
+# amplitude vetor 2d
+amplitudes_2d = amplitudes.reshape(-1, 1)
+novo_graus = np.hstack([amplitudes_2d, auxiliar_conversao])
 
 # Copiando para absoluto
 absoluto = novo_graus

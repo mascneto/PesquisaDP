@@ -136,10 +136,12 @@ def process_signal(
     tensao_barra, 
     condi_sinal, 
     tempo, 
-    limiar=30, 
+    limiar, 
     peak_distance=3440, 
-    plot=True
-):
+    plot=True,
+    save_path=None,
+    filename='signal_results'  # New parameter for custom filename
+    ):
     """
     Process signal with peak detection and analysis.
 
@@ -184,7 +186,7 @@ def process_signal(
     pulsoreal29 = np.where(pulso29 != 0, antena, 0)
 
     # Find peaks
-    pks, _ = scipy.signal.find_peaks(np.abs(pulsoreal29), distance=peak_distance)
+    pks, _ = find_peaks(np.abs(pulsoreal29), distance=peak_distance)
 
     # Get peak values
     locs = np.array(pks, dtype=np.int64)
@@ -215,6 +217,22 @@ def process_signal(
     # Absolute values
     absoluto = np.abs(novo_graus)
 
+        # Results dictionary
+    results = {
+        'pulso29': pulso29,
+        'pulsoreal29': pulsoreal29,
+        'peak_amplitudes': peak_amplitudes,
+        'peak_times': peak_times,
+        'novo': novo,
+        'novo_graus': novo_graus,
+        'absoluto': absoluto,
+        'senoide_16': senoide_16,
+        'eixo_360': eixo_360,
+        # Include original input parameters for reference
+        'input_limiar': limiar,
+        'input_peak_distance': peak_distance
+    }
+
     # Optional plotting
     if plot:
         plt.figure(figsize=(12, 6))
@@ -231,31 +249,43 @@ def process_signal(
         plt.tight_layout()
         plt.show()
 
-    # Return results in a dictionary
-    return {
-        'pulso29': pulso29,
-        'pulsoreal29': pulsoreal29,
-        'peak_amplitudes': peak_amplitudes,
-        'peak_times': peak_times,
-        'novo': novo,
-        'novo_graus': novo_graus,
-        'absoluto': absoluto,
-        'senoide_16': senoide_16,
-        'eixo_360': eixo_360
-    }
+    # File saving logic
+    if save_path is not None:
+        # Create the directory if it doesn't exist
+        os.makedirs(save_path, exist_ok=True)
 
-# Example usage
-# result = process_signal(tensao_barra, condi_sinal, tempo, plot=True)
+        # Ensure filename doesn't have extension
+        filename = os.path.splitext(filename)[0]
+
+        # Save as MATLAB .mat file
+        mat_path = os.path.join(save_path, f'{filename}.mat')
+        scipy.io.savemat(mat_path, results)
+        print(f"Results saved to MATLAB .mat file: {mat_path}")
+    """
+        # Save plot if plotting is enabled
+        if plot:
+            plot_path = os.path.join(save_path, f'{filename}_plot.png')
+            plt.savefig(plot_path)
+            print(f"Plot saved to: {plot_path}")
+    """
+
+    # Return results in a dictionary (with additional filename info)
+    return results
 
 result = process_signal(
     tensao_barra, 
     condi_sinal, 
-    tempo, 
-    limiar=30,  # optional
-    peak_distance=3440,  # optional
-    plot=True  # optional, shows plot if True
-)
+    tempo,
+    limiar = 30,
+    peak_distance = 3440, 
+    plot=False,  # optional, shows plot if True
+    save_path='./signal_results',
+    filename='my_custom_signal'
+    )
 
-# Access results
-peak_amplitudes = result['peak_amplitudes']
-peak_times = result['peak_times']
+
+#peak_amplitudes = result['peak_amplitudes']
+#peak_times = result['peak_times']
+
+
+

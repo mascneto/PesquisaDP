@@ -143,8 +143,8 @@ def process_signal(
     filename='signal_results'  # New parameter for custom filename
     ):
     """
-    Process signal with peak detection and analysis.
-
+    Process signal with peak detection, analysis, and optional .mat file saving.
+    
     Parameters:
     -----------
     tensao_barra : array
@@ -158,8 +158,12 @@ def process_signal(
     peak_distance : int, optional
         Minimum distance between peaks (default 3440)
     plot : bool, optional
-        Whether to generate plots (default False)
-
+        Whether to generate plots (default True)
+    save_path : str, optional
+        Directory path to save results (default None)
+    filename : str, optional
+        Base filename for saved files (default 'signal_results')
+    
     Returns:
     --------
     dict : Dictionary containing processed signal data

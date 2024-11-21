@@ -130,132 +130,132 @@ condi_sinal = np.sum(np.column_stack(condi_sinal), axis=1)
 antena_antena = np.sum(np.column_stack(antena_antena), axis=1)
 tensao_barra = np.sum(np.column_stack(tensao_barra), axis=1)
 charge_ldic = np.sum(np.column_stack(charge_ldic), axis=1)
-
-# Assume the following variables are available
 tempo = np.arange(1, len(senoide_16)+1)
-senoide = tensao_barra
-antena = condi_sinal
 
-# Calculate statistics
-# media = np.mean(antena, axis=0)
-# moda = stats.mode(antena, axis=0)[0]
+def process_signal(
+    tensao_barra, 
+    condi_sinal, 
+    tempo, 
+    limiar=30, 
+    peak_distance=3440, 
+    plot=True
+):
+    """
+    Process signal with peak detection and analysis.
 
-# Process the data
-quadrado = np.abs(antena)
-maximo_teste = np.max(quadrado, axis=0)
-maxi_maxi = np.max(maximo_teste)
-pulso29 = np.zeros_like(antena)
+    Parameters:
+    -----------
+    tensao_barra : array
+        Input voltage bar signal
+    condi_sinal : array
+        Input condition signal 
+    tempo : array
+        Time array
+    limiar : float, optional
+        Threshold percentage (default 30)
+    peak_distance : int, optional
+        Minimum distance between peaks (default 3440)
+    plot : bool, optional
+        Whether to generate plots (default False)
 
-limiar = 30 # or 2.56e-6
+    Returns:
+    --------
+    dict : Dictionary containing processed signal data
+    """
+    # Assign signals
+    senoide = tensao_barra
+    antena = condi_sinal
 
-for i in range(len(tempo)):
-    if quadrado[i] > (limiar/100) * maxi_maxi:
-        pulso29[i] = quadrado[i]
-    else:
-        pass
+    # Ensure numpy arrays
+    tempo = np.array(tempo)
+    antena = np.array(antena)
+    senoide = np.array(senoide)
 
-pulsoreal29 = np.where(pulso29 != 0, antena, 0)
+    # Process the data
+    quadrado = np.abs(antena)
+    maximo_teste = np.max(quadrado, axis=0)
+    maxi_maxi = np.max(maximo_teste)
 
-# Make sure tempo and pulsoreal29 are numpy arrays
-tempo = np.array(tempo)
-pulsoreal29 = np.array(pulsoreal29)
+    # Thresholding
+    pulso29 = np.zeros_like(antena)
+    pulso29[quadrado > (limiar/100) * maxi_maxi] = quadrado[quadrado > (limiar/100) * maxi_maxi]
 
-# Plot the data
-plt.figure()
-plt.plot(tempo, senoide*0.1, label='senoide')
-plt.plot(tempo, antena, label='antena')
-plt.plot(tempo, pulsoreal29, label='pulsoreal29')
-plt.legend()
-#plt.show()
+    # Create pulsoreal29
+    pulsoreal29 = np.where(pulso29 != 0, antena, 0)
 
+    # Find peaks
+    pks, _ = scipy.signal.find_peaks(np.abs(pulsoreal29), distance=peak_distance)
 
-"""# Debug prints to understand our data
-print("Type of pulsoreal29:", type(pulsoreal29))
-print("Shape of pulsoreal29:", pulsoreal29.shape)
-print("Type of tempo:", type(tempo))
-print("Shape of tempo:", tempo.shape)"""
+    # Get peak values
+    locs = np.array(pks, dtype=np.int64)
+    peak_amplitudes = pulsoreal29[locs]
+    peak_times = tempo[locs]
 
-# Find peaks
-pks, locs_dict = find_peaks(np.abs(pulsoreal29), distance=3440)
+    # Horizontal concatenation of amplitudes and phases
+    novo = np.column_stack((peak_amplitudes, peak_times))
 
-"""
-# Debug the output
-print("Type of pks:", type(pks))
-print("First few values of pks:", pks[:5] if hasattr(pks, '__getitem__') else "can't slice")
-print("Type of locs_dict:", type(locs_dict))
-"""
+    # Create x-axis steps
+    passo_plot = 360/len(antena)
+    eixo_x = np.arange(passo_plot, 360 + passo_plot, passo_plot)
 
-# Convert to array
-locs = np.array(pks, dtype=np.int64)  # use pks instead of locs_dict
-"""
-print("Converted locs shape:", locs.shape)
-print("First few indices:", locs[:5])
-"""
-# Get peak values
-peak_amplitudes = pulsoreal29[locs]
-peak_times = tempo[locs]
+    # First column of senoide (if 2D)
+    senoide_16 = senoide[:, 0] if len(senoide.shape) > 1 else senoide
 
-# Plot
-plt.figure(figsize=(12, 6))
-plt.plot(tempo, pulsoreal29, 'b-', label='Signal', alpha=0.7)
-plt.plot(peak_times, peak_amplitudes, 'ro', label='Peaks', markersize=8)
-plt.plot(tempo, senoide*0.1, label='senoide')
-plt.plot(tempo, antena, label='antena')
-plt.plot(tempo, pulsoreal29, label='pulsoreal29')
-plt.title('Signal with Detected Peaks')
-plt.xlabel('Time')
-plt.ylabel('Amplitude')
-plt.grid(True, alpha=0.3)
-plt.legend()
-plt.tight_layout()
-plt.show()
+    # 360-degree axis
+    eixo_360 = eixo_x
 
-# Store results
-fases = peak_times
-amplitudes = peak_amplitudes
+    # Auxiliary conversion vector
+    tam360 = eixo_360.shape[0]
+    auxiliar_conversao = (novo[:, 1] / tam360) * 360
 
-# Get peak values directly using the indices
-peak_amplitudes = pulsoreal29[locs]  
-peak_times = tempo[locs]
+    # 2D amplitude vector
+    amplitudes_2d = peak_amplitudes.reshape(-1, 1)
+    novo_graus = np.hstack([amplitudes_2d, auxiliar_conversao.reshape(-1, 1)])
 
-"""
-# Debug after conversion
-print("Type of locs after conversion:", type(locs))
-print("Shape of locs after conversion:", locs.shape)
-print("First few values after conversion:", locs[:5])
+    # Absolute values
+    absoluto = np.abs(novo_graus)
 
-"""
+    # Optional plotting
+    if plot:
+        plt.figure(figsize=(12, 6))
+        plt.plot(tempo, pulsoreal29, 'b-', label='Signal', alpha=0.7)
+        plt.plot(peak_times, peak_amplitudes, 'ro', label='Peaks', markersize=8)
+        plt.plot(tempo, senoide*0.1, label='senoide')
+        plt.plot(tempo, antena, label='antena')
+        plt.plot(tempo, pulsoreal29, label='pulsoreal29')
+        plt.title('Signal with Detected Peaks')
+        plt.xlabel('Time')
+        plt.ylabel('Amplitude')
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
-# Concatenação horizontal de amplitudes e fases (horzcat)
-novo = np.column_stack((amplitudes, fases))
+    # Return results in a dictionary
+    return {
+        'pulso29': pulso29,
+        'pulsoreal29': pulsoreal29,
+        'peak_amplitudes': peak_amplitudes,
+        'peak_times': peak_times,
+        'novo': novo,
+        'novo_graus': novo_graus,
+        'absoluto': absoluto,
+        'senoide_16': senoide_16,
+        'eixo_360': eixo_360
+    }
 
-# Create the x-axis steps
-passo_plot = 360/len(antena)  
-eixo_x = np.arange(passo_plot, 360 + passo_plot, passo_plot)  # equivalente ao [passo_plot:passo_plot:360]
+# Example usage
+# result = process_signal(tensao_barra, condi_sinal, tempo, plot=True)
 
-# Primeira coluna da senoide (se a senoide for 2D)
-senoide_16 = senoide[:, 0] if len(senoide.shape) > 1 else senoide
+result = process_signal(
+    tensao_barra, 
+    condi_sinal, 
+    tempo, 
+    limiar=30,  # optional
+    peak_distance=3440,  # optional
+    plot=True  # optional, shows plot if True
+)
 
-# Eixo de 360 graus
-eixo_360 = eixo_x
-
-# Inicializando o vetor auxiliar_conversao
-auxiliar_conversao = np.zeros((novo.shape[0], 1))
-tam360 = eixo_360.shape[0]
-
-# Loop para calcular o valor de auxiliar_conversao
-for cont in range(novo.shape[0]):  # 'size(novo,1)' no MATLAB é equivalente a 'novo.shape[0]' em Python
-    auxiliar_conversao[cont, 0] = (novo[cont, 1] / tam360) * 360
-
-# amplitude vetor 2d
-amplitudes_2d = amplitudes.reshape(-1, 1)
-novo_graus = np.hstack([amplitudes_2d, auxiliar_conversao])
-
-# Copiando para absoluto
-absoluto = novo_graus
-
-# Verificando se o número de linhas é maior que 5000
-if absoluto.shape[0] > 5000:
-    pass
-
-absoluto = np.abs(novo_graus)
+# Access results
+peak_amplitudes = result['peak_amplitudes']
+peak_times = result['peak_times']

@@ -101,36 +101,74 @@ def corte_seno_mm_tempo(tamos, Ch_sen):
                 fim]
 
 
-for arquivo in arquivos: # aquisições de um arquivo    
-    # Load .mat file
-    mat_data = scipy.io.loadmat(arquivo)
+def process_mat_files(
+    arquivos, 
+    tamos, 
+    corte_seno_mm_tempo_func
+):
+    """
+    Process multiple .mat files and extract channel data.
     
-    # Assuming Ch1, Ch2, Ch3, Ch4 are in the loaded mat file
-    # You might need to adjust these based on exact variable names in your .mat file
-    Ch1 = mat_data['Ch1']
-    Ch2 = mat_data['Ch2']
-    Ch3 = mat_data['Ch3']
-    Ch4 = mat_data['Ch4']
+    Parameters:
+    -----------
+    arquivos : list
+        List of .mat file paths to process
+    tamos : array-like
+        Reference parameter for signal cutting
+    corte_seno_mm_tempo_func : function
+        Function to determine signal cutting indices
     
-    # Extract data from inicio to end of vector
-    ampldetec = Ch3[corte_seno_mm_tempo(tamos,Ch2)[2]:corte_seno_mm_tempo(tamos,Ch2)[3]]
-    condi_sinal.append(ampldetec)
+    Returns:
+    --------
+    dict : Dictionary containing processed signal data
+    """
+    # Initialize empty lists to store data
+    condi_sinal = []
+    antena_antena = []
+    tensao_barra = []
+    charge_ldic = []
     
-    antena_pura = Ch1[corte_seno_mm_tempo(tamos,Ch2)[2]:corte_seno_mm_tempo(tamos,Ch2)[3]]
-    antena_antena.append(antena_pura)
+    # Process each file
+    for arquivo in arquivos:
+        # Load .mat file
+        mat_data = scipy.io.loadmat(arquivo)
+        
+        # Determine the start and end indices for signal cutting
+        # Assumes corte_seno_mm_tempo returns a tuple with cutting indices
+        start_index = corte_seno_mm_tempo_func(tamos, mat_data['Ch2'])[2]
+        end_index = corte_seno_mm_tempo_func(tamos, mat_data['Ch2'])[3]
+        
+        # Extract and slice channel data
+        ampldetec = mat_data['Ch3'][start_index:end_index]
+        condi_sinal.append(ampldetec)
+        
+        antena_pura = mat_data['Ch1'][start_index:end_index]
+        antena_antena.append(antena_pura)
+        
+        senoide_16 = mat_data['Ch2'][start_index:end_index]
+        tensao_barra.append(senoide_16)
+        
+        charge = mat_data['Ch4'][start_index:end_index]
+        charge_ldic.append(charge)
     
-    senoide_16 = Ch2[corte_seno_mm_tempo(tamos,Ch2)[2]:corte_seno_mm_tempo(tamos,Ch2)[3]]
-    tensao_barra.append(senoide_16)
+    # Convert lists to summed numpy arrays
+    condi_sinal = np.sum(np.column_stack(condi_sinal), axis=1)
+    antena_antena = np.sum(np.column_stack(antena_antena), axis=1)
+    tensao_barra = np.sum(np.column_stack(tensao_barra), axis=1)
+    charge_ldic = np.sum(np.column_stack(charge_ldic), axis=1)
     
-    charge = Ch4[corte_seno_mm_tempo(tamos,Ch2)[2]:corte_seno_mm_tempo(tamos,Ch2)[3]]
-    charge_ldic.append(charge)
+    # Create time array
+    tempo = np.arange(1, len(senoide_16)+1)
+    
+    # Return results as a dictionary
+    return {
+        'condi_sinal': condi_sinal,
+        'antena_antena': antena_antena,
+        'tensao_barra': tensao_barra,
+        'charge_ldic': charge_ldic,
+        'tempo': tempo
+    }
 
-# Convert lists to numpy arrays
-condi_sinal = np.sum(np.column_stack(condi_sinal), axis=1)
-antena_antena = np.sum(np.column_stack(antena_antena), axis=1)
-tensao_barra = np.sum(np.column_stack(tensao_barra), axis=1)
-charge_ldic = np.sum(np.column_stack(charge_ldic), axis=1)
-tempo = np.arange(1, len(senoide_16)+1)
 
 def process_signal(
     tensao_barra, 
@@ -276,13 +314,21 @@ def process_signal(
     # Return results in a dictionary (with additional filename info)
     return results
 
+
+result1 = process_mat_files(arquivos, tamos, corte_seno_mm_tempo)
+
+# Extract variables from result1
+tensao_barra = result1['tensao_barra']
+condi_sinal = result1['condi_sinal']
+tempo = result1['tempo']
+
 result = process_signal(
     tensao_barra, 
     condi_sinal, 
     tempo,
     limiar = 30,
     peak_distance = 3440, 
-    plot=False,  # optional, shows plot if True
+    plot=True,  # optional, shows plot if True
     save_path='./signal_results',
     filename='my_custom_signal'
     )

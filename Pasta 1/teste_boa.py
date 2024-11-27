@@ -239,6 +239,15 @@ def process_signal(
     peak_times = tempo[locs]
     peak_fase = fase[locs]
 
+    #Extract Pulses:
+    pulses = np.zeros((len(locs),300))
+    cont = 0
+    for i in locs:
+        pulses[cont] = condi_sinal[i-100:i+200]
+        cont = cont + 1
+    pulses = np.array(pulses)
+        
+
     # Horizontal concatenation of amplitudes and phases
     novo = np.column_stack((peak_amplitudes, peak_times))
 
@@ -263,6 +272,10 @@ def process_signal(
     # Absolute values
     absoluto = np.abs(novo_graus)
 
+    # Concatenate peak_amplitudes, peak_fase, and pulses
+    dados = np.hstack((peak_amplitudes.reshape(-1, 1), peak_fase.reshape(-1, 1), pulses))
+
+
         # Results dictionary
     results = {
         'pulso29': pulso29,
@@ -270,6 +283,7 @@ def process_signal(
         'peak_amplitudes': peak_amplitudes,
         'peak_times': peak_times,
         'peak_fase': peak_fase,
+        'pulses': pulses,
         'novo': novo,
         'novo_graus': novo_graus,
         'absoluto': absoluto,
@@ -277,7 +291,8 @@ def process_signal(
         'eixo_360': eixo_360,
         # Include original input parameters for reference
         'input_limiar': limiar,
-        'input_peak_distance': peak_distance
+        'input_peak_distance': peak_distance,
+        'dados' : dados
     }
 
     # Optional plotting
@@ -356,10 +371,14 @@ result = process_signal(
 peak_amplitudes = result['peak_amplitudes']
 peak_times = result['peak_times']
 peak_fase = result['peak_fase']
+pulses = result['pulses']
+dados = result['dados']
 
 print(f'Amplitudes: {peak_amplitudes}')
 print(f'Fase: {peak_fase}')
 print(f'Tempo: {peak_times}')
+print(f'pulses: {pulses}')
+print(f'dados : {dados}')
 
 
 

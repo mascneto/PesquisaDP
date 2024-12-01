@@ -1,4 +1,5 @@
 import os
+import csv
 from pathlib import Path
 import scipy.io
 import numpy as np
@@ -178,7 +179,7 @@ def process_signal(
     tempo, 
     limiar, 
     peak_distance=3440, 
-    plot=True,
+    plot=False,
     save_path=None,
     filename='signal_results'  # New parameter for custom filename
     ):
@@ -246,7 +247,7 @@ def process_signal(
         pulses[cont] = condi_sinal[i-100:i+200]
         cont = cont + 1
     pulses = np.array(pulses)
-        
+    
 
     # Horizontal concatenation of amplitudes and phases
     novo = np.column_stack((peak_amplitudes, peak_times))
@@ -311,32 +312,15 @@ def process_signal(
         plt.tight_layout()
         plt.show()
 
-        plt.figure(figsize=(12, 6))
-        plt.plot(fase, pulsoreal29, 'b-', label='Signal', alpha=0.7)
-        plt.plot(peak_fase, peak_amplitudes, 'ro', label='Peaks', markersize=8)
-        plt.plot(fase, senoide*0.1, label='senoide')
-        plt.plot(fase, antena, label='antena')
-        plt.plot(fase, pulsoreal29, label='pulsoreal29')
-        plt.title('Signal with Detected Peaks')
-        plt.xlabel('fase')
-        plt.ylabel('Amplitude')
-        plt.grid(True, alpha=0.3)
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
-
-    # File saving logic
+     # File saving logic
     if save_path is not None:
-        # Create the directory if it doesn't exist
-        os.makedirs(save_path, exist_ok=True)
-
-        # Ensure filename doesn't have extension
-        filename = os.path.splitext(filename)[0]
-
-        # Save as MATLAB .mat file
-        mat_path = os.path.join(save_path, f'{filename}.mat')
-        scipy.io.savemat(mat_path, results)
-        print(f"Results saved to MATLAB .mat file: {mat_path}")
+        # Save as CSV file
+        csv_path = os.path.join(save_path, f'{filename}.csv')
+        with open(csv_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for key, value in results.items():
+                writer.writerow([key, value])
+        print(f"Results saved to CSV file: {csv_path}")
     """
         # Save plot if plotting is enabled
         if plot:
@@ -368,17 +352,16 @@ result = process_signal(
     )
 
 
-peak_amplitudes = result['peak_amplitudes']
-peak_times = result['peak_times']
-peak_fase = result['peak_fase']
-pulses = result['pulses']
-dados = result['dados']
+#peak_amplitudes = result['peak_amplitudes']
+#peak_times = result['peak_times']
+#peak_fase = result['peak_fase']
+#pulses = result['pulses']
+#dados = result['dados']
 
-print(f'Amplitudes: {peak_amplitudes}')
-print(f'Fase: {peak_fase}')
-print(f'Tempo: {peak_times}')
-print(f'pulses: {pulses}')
-print(f'dados : {dados}')
-
+#print(f'Amplitudes: {peak_amplitudes}')
+#print(f'Fase: {peak_fase}')
+#print(f'Tempo: {peak_times}')
+#print(f'pulses: {pulses}')
+#print(f'dados : {dados}')
 
 

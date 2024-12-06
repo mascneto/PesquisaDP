@@ -301,9 +301,11 @@ def process_signal(
         # Save as CSV file
         csv_path = os.path.join(save_path, f'{filename}.csv')
         with open(csv_path, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            for key, value in results.items():
-                writer.writerow([key, value])
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow(['Index', 'Amplitude', 'Time']) # escreves o headers
+            for index, (amplitude, time) in enumerate(zip(peak_amplitudes, peak_times), 1):
+                csv_writer.writerow([index, amplitude, time])
+
         print(f"Results saved to CSV file: {csv_path}")
     """
         # Save plot if plotting is enabled
@@ -341,6 +343,7 @@ peak_times = result['peak_times']
 
 print(f"{peak_amplitudes}")
 print(f'peak times: {peak_times}')
+
 
 
 

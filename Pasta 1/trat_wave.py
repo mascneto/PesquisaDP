@@ -233,10 +233,21 @@ def process_signal(
     # Find peaks (scipy.signal function )
     pks, _ = find_peaks(np.abs(pulsoreal29), distance=peak_distance)
 
+    phase = (tempo*360)/tempo[-1]
+
     # Get peak values
     locs = np.array(pks, dtype=np.int64)
     peak_amplitudes = pulsoreal29[locs]
     peak_times = tempo[locs]
+    peak_phases = phase[locs]
+
+    #Extract Pulses:
+    pulses = np.zeros((len(locs),300))
+    cont = 0
+    for i in locs:
+        pulses[cont] = condi_sinal[i-100:i+200]
+        cont = cont + 1
+    pulses = np.array(pulses)
 
     # Horizontal concatenation of amplitudes and phases
     novo = np.column_stack((peak_amplitudes, peak_times))
@@ -262,12 +273,17 @@ def process_signal(
     # Absolute values
     absoluto = np.abs(novo_graus)
 
+    # Concatenate peak_amplitudes, peak_fase, and pulses
+    dados = np.hstack((peak_amplitudes.reshape(-1, 1), peak_phases.reshape(-1, 1), pulses))
+
         # Results dictionary
     results = {
         'pulso29': pulso29,
         'pulsoreal29': pulsoreal29,
         'peak_amplitudes': peak_amplitudes,
         'peak_times': peak_times,
+        'peak_phase': peak_phases,
+        'pulses': pulses,
         'novo': novo,
         'novo_graus': novo_graus,
         'absoluto': absoluto,
@@ -275,7 +291,8 @@ def process_signal(
         'eixo_360': eixo_360,
         # Include original input parameters for reference
         'input_limiar': limiar,
-        'input_peak_distance': peak_distance
+        'input_peak_distance': peak_distance,
+        'dados': dados
     }
 
     # Optional plotting
@@ -302,9 +319,19 @@ def process_signal(
         csv_path = os.path.join(save_path, f'{filename}.csv')
         with open(csv_path, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(['Index', 'Amplitude', 'Time']) # escreves o headers
-            for index, (amplitude, time) in enumerate(zip(peak_amplitudes, peak_times), 1):
-                csv_writer.writerow([index, amplitude, time])
+
+            # Máxima 
+            max_pulse_length = max(len(pulse) for pulse in pulses)
+
+            headers = ['Index', 'Amplitude', 'Phase']
+            headers.extend([f'Pulse_{i+1}' for i in range(max_pulse_length)])
+            csv_writer.writerow(headers) # escreve os headers
+
+            for index, (amplitude, phase, pulse) in enumerate(zip(peak_amplitudes, peak_phases, pulses), 1):
+                padded_pulse = list(pulse) + [None] * (max_pulse_length - len(pulse))
+                row = [index, amplitude, phase] + padded_pulse
+                csv_writer.writerow(row)
+
 
         print(f"Results saved to CSV file: {csv_path}")
     """
